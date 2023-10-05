@@ -1,8 +1,9 @@
-#ifndef STRIP_PACKING_UTIL_SEGTREE_HPP
-#define STRIP_PACKING_UTIL_SEGTREE_HPP
+#ifndef STRIP_PACKING_UTIL_FIRST_FIT_TREE_HPP
+#define STRIP_PACKING_UTIL_FIRST_FIT_TREE_HPP
 
 #include <algorithm>
 #include <cassert>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <type_traits>
@@ -24,7 +25,8 @@ class first_fit_tree {
     Allocator m_alloc;
     size_t m_size; /// Tamanho (número de elementos) da árvore
 
-    std::vector<T, Allocator> m_data; /// Vetor de dados da árvore
+    std::vector<T, Allocator> m_data;    /// Vetor de dados da árvore
+    std::vector<T, Allocator> m_summary; /// Vetor de dados agregados da árvore
 
     /**
      * Altura de um nó na árvore.
@@ -82,16 +84,15 @@ class first_fit_tree {
     }
 
   public:
-    std::vector<T, Allocator> m_summary; /// Vetor de dados agregados da árvore
-
     using value_type = T;
     using allocator_type = Allocator;
 
-    using reference = typename allocator_type::reference;
-    using const_reference = typename allocator_type::const_reference;
+    using reference = value_type&;
+    using const_reference = const value_type&;
 
-    using pointer = typename allocator_type::pointer;
-    using const_pointer = typename allocator_type::const_pointer;
+    using pointer = typename std::allocator_traits<Allocator>::pointer;
+    using const_pointer =
+        typename std::allocator_traits<Allocator>::const_pointer;
 
     using iterator = typename decltype(m_data)::iterator;
     using const_iterator = typename decltype(m_data)::const_iterator;
@@ -169,7 +170,7 @@ class first_fit_tree {
         }
     }
 
-    size_type first_fit(value_type value) const {
+    size_t first_fit(value_type value) const {
         node_t node = root();
         if (empty() || m_summary[node] < value) {
             return npos;
@@ -193,9 +194,7 @@ class first_fit_tree {
 
     void decrease(size_type index, T delta) {
         node_t node = index;
-
-        size_t value = m_data[node];
-        m_data[node] = value - delta;
+        m_data[node] -= delta;
 
         if (leaf(node)) {
             m_summary[node] = m_data[node];
@@ -234,4 +233,4 @@ class first_fit_tree {
 
 } // namespace strip_packing::util
 
-#endif // STRIP_PACKING_UTIL_SEGTREE_HPP
+#endif // STRIP_PACKING_UTIL_FIRST_FIT_TREE_HPP

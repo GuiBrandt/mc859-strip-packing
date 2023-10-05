@@ -9,6 +9,11 @@ cmake_minimum_required(VERSION 3.27)
 
 project(mc859 CXX)
 
+include(ExternalProject)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
@@ -41,10 +46,40 @@ find_package(LEMON) # TODO: marcar como REQUIRED quando necessário
 # é configurada.
 find_package(GUROBI) # TODO: marcar como REQUIRED quando necessário
 
+# BRKGA-MP-IPR - Biblioteca de Multi-Parent Biased Random-Key Genetic Algorithm
+# com Implicit Path Relinking.
+#
+# Repositório: https://github.com/ceandrade/brkga_mp_ipr_cpp
+#
+# Faça download do submodulo do git, ou configure a variável de ambiente
+# BRKGA_HOME com o caminho para o repositório clonado.
+#
+# Bibliografia:
+#   C.E. Andrade. R.F. Toso, J.F. Gonçalves, M.G.C. Resende. The Multi-Parent
+#   Biased Random-key Genetic Algorithm with Implicit Path Relinking. European
+#   Journal of Operational Research, volume 289, number 1, pages 17–30, 2021.
+#   DOI 10.1016/j.ejor.2019.11.037
+find_package(BRKGA REQUIRED)
+
 #==============================================================================
 # Configuração de compilação
 #==============================================================================
 
-include_directories(${LEMON_INCLUDE_DIR} ${GUROBI_INCLUDE_DIRS} include)
+include_directories(
+  ${LEMON_INCLUDE_DIR}
+  ${GUROBI_INCLUDE_DIRS}
+  ${BRKGA_INCLUDE_DIR}
+  include)
+
+find_package(Threads)
+find_package(OpenMP)
 
 add_executable(mc859-strip-packing src/main.cpp)
+
+if(Threads_FOUND)
+  target_link_libraries(mc859-strip-packing PUBLIC Threads::Threads)
+endif()
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(mc859-strip-packing PUBLIC OpenMP::OpenMP_CXX)
+endif()

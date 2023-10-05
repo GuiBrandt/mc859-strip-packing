@@ -1,0 +1,4 @@
+[submodule "vendor/brkga_mp_ipr_cpp"]
+	path = vendor/brkga_mp_ipr_cpp
+	url = https://github.com/ceandrade/brkga_mp_ipr_cpp
+	tag = v3.0.0
