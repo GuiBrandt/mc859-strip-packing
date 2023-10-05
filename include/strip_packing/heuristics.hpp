@@ -226,6 +226,20 @@ solution_t brkga_mp_ipr_improve(instance_t instance,
 
     algorithm.setInitialPopulation(initial_chromosomes);
 
+    int last_update_iteration = -100;
+    algorithm.addNewSolutionObserver(
+        [&last_update_iteration](const BRKGA::AlgorithmStatus& status) -> bool {
+            if (status.current_iteration - last_update_iteration >=
+                100) {
+                std::cout << "Improved best individual: " << status.best_fitness
+                          << ". Iteration " << status.current_iteration
+                          << ". Current time: " << status.current_time
+                          << std::endl;
+                last_update_iteration = status.current_iteration;
+            }
+            return true;
+        });
+
     auto status = algorithm.run(control_params);
     std::cout << "Ran " << status.current_iteration << " iterations"
               << std::endl;

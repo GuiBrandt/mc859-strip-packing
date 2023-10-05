@@ -11,9 +11,9 @@
 using namespace strip_packing;
 
 template <typename URBG> instance_t gen_instance(URBG&& rng) {
-    std::uniform_int_distribution<size_t> size_dist(100, 200);
-    std::uniform_real_distribution<dim_type> cap_dist(3, 30);
-    std::uniform_real_distribution<dim_type> dim_dist(0.1, 5);
+    std::uniform_int_distribution<size_t> size_dist(100, 300);
+    std::uniform_real_distribution<dim_type> cap_dist(30, 100);
+    std::uniform_real_distribution<dim_type> dim_dist(2, 10);
     std::uniform_real_distribution<cost_type> weight_dist(0, 10);
 
     size_t instance_size = size_dist(rng);
@@ -92,21 +92,23 @@ int main(int argc, char** argv) {
 
     std::cout << "[BRKGA]" << std::endl;
     std::vector<solution_t> initial;
-    initial.reserve(500);
+    initial.reserve(2500);
 
-    for (int i = 0; i < 250; i++) {
+    for (int i = 0; i < 1250; i++) {
         auto solution =
             heuristics::constructive::randomized_first_fit_decreasing_weight(
                 instance, rng, std::normal_distribution<>(0.0, 5.0));
         initial.push_back(solution);
     }
 
-    for (int i = 0; i < 250; i++) {
+    for (int i = 0; i < 1250; i++) {
         auto solution =
             heuristics::constructive::randomized_best_fit_increasing_height(
                 instance, rng, std::normal_distribution<>(0.0, 3.0));
         initial.push_back(solution);
     }
+
+    std::shuffle(initial.begin(), initial.end(), rng);
 
     auto [brkga_params, control_params] =
         BRKGA::readConfiguration("brkga.conf");
@@ -115,5 +117,4 @@ int main(int argc, char** argv) {
         instance, initial, rng, brkga_params, control_params, 24);
 
     print_solution(instance, brkga_solution);
-    std::cout << std::endl;
 }
