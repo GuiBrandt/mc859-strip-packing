@@ -59,7 +59,7 @@ void print_solution(instance_t instance, solution_t solution) {
     }
 }
 
-int main(int argc, char** argv) {
+int main() {
     std::random_device rd;
 
     auto seed = rd();
@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
         auto solution =
             heuristics::constructive::randomized_first_fit_decreasing_weight(
                 instance, rng, std::normal_distribution<>(0.0, 5.0));
+        normalize(instance, solution);
         initial.push_back(solution);
     }
 
@@ -105,6 +106,7 @@ int main(int argc, char** argv) {
         auto solution =
             heuristics::constructive::randomized_best_fit_increasing_height(
                 instance, rng, std::normal_distribution<>(0.0, 3.0));
+        normalize(instance, solution);
         initial.push_back(solution);
     }
 
@@ -113,8 +115,8 @@ int main(int argc, char** argv) {
     auto [brkga_params, control_params] =
         BRKGA::readConfiguration("brkga.conf");
 
-    auto brkga_solution = heuristics::improvement::brkga_mp_ipr_improve(
-        instance, initial, rng, brkga_params, control_params, 24);
+    auto brkga_solution = heuristics::improvement::brkga_mp_ipr(
+        instance, initial)(rng, brkga_params, control_params, 24);
 
     print_solution(instance, brkga_solution);
 }

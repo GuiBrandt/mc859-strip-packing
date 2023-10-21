@@ -10,7 +10,7 @@ template <typename T, typename Compare = std::less<T>>
 std::vector<size_t> sort_permutation(std::vector<T> vec, Compare compare = std::less<T>()) {
     std::vector<size_t> permutation;
     permutation.resize(vec.size());
-    for (int i = 1; i < vec.size(); i++) {
+    for (size_t i = 1; i < vec.size(); i++) {
         permutation[i] = i;
     }
     std::sort(permutation.begin(), permutation.end(), [&](size_t i, size_t j) {

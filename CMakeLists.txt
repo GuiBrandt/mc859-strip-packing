@@ -19,6 +19,20 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.4)
+        message(FATAL_ERROR "GCC version must be at least 9.4!")
+    endif()
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
+        message(FATAL_ERROR "Clang version must be at least 10.0!")
+    endif()
+else()
+    message(WARNING "You are using an unsupported compiler! Compilation has only been tested with Clang and GCC.")
+endif()
+
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+
 #==============================================================================
 # Configuração dos pacotes externos
 #------------------------------------------------------------------------------
@@ -75,6 +89,8 @@ find_package(Threads)
 find_package(OpenMP)
 
 add_executable(mc859-strip-packing src/main.cpp)
+
+target_compile_options(mc859-strip-packing PRIVATE -Wall -Wextra -Wpedantic)
 
 if(Threads_FOUND)
   target_link_libraries(mc859-strip-packing PUBLIC Threads::Threads)
