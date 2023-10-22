@@ -1,13 +1,6 @@
 #ifndef STRIP_PACKING_IO_HPP
 #define STRIP_PACKING_IO_HPP
 
-#include "blend2d/api.h"
-#include "blend2d/context.h"
-#include "blend2d/fontface.h"
-#include "blend2d/format.h"
-#include "blend2d/geometry.h"
-#include "blend2d/image.h"
-#include "blend2d/rgba.h"
 #include "defs.hpp"
 
 #include <algorithm>
@@ -16,10 +9,8 @@
 
 #include <numeric>
 #include <ostream>
-#include <yaml-cpp/node/parse.h>
-#include <yaml-cpp/yaml.h>
 
-#include <blend2d.h>
+#include <yaml-cpp/yaml.h>
 
 namespace YAML {
 template <> struct convert<strip_packing::rect_t> {
@@ -101,65 +92,6 @@ static void print_solution(instance_t instance, solution_t solution) {
         h += max_h;
         std::cout << std::endl;
     }
-}
-
-static void render_solution(const instance_t& instance, solution_t solution, std::string filename) {
-    normalize(instance, solution);
-
-    dim_type width = instance.recipient_length;
-    double scale = 16;
-    size_t padding = 32;
-
-    dim_type height = 0;
-    for (auto& level : solution) {
-        dim_type level_height = 0;
-        for (auto& i : level) {
-            level_height = std::max(level_height, instance.rects[i].height);
-        }
-        height += level_height;
-    }
-
-    BLImage img(std::ceil(width * scale + 2 * padding),
-                std::ceil(height * scale + 2 * padding), BL_FORMAT_PRGB32);
-
-    BLContext ctx(img);
-    BLRgba32 white(0xFFFFFFFF);
-    ctx.fillAll(white);
-
-    ctx.setStrokeWidth(4);
-
-    BLRgba32 black(0xFF000000);
-    ctx.strokeRect(BLRect(padding, padding, instance.recipient_length * scale,
-                          height * scale),
-                   black);
-
-    double x;
-    double y = height * scale + padding;
-
-    for (auto& level : solution) {
-        ctx.setStrokeWidth(1);
-        x = padding;
-        dim_type level_height = 0;
-        for (auto& i : level) {
-            auto rect = instance.rects[i];
-
-            BLRect bl_rect(x, y - rect.height * scale, rect.length * scale,
-                           rect.height * scale);
-            ctx.fillRect(bl_rect, BLRgba32(0xFF, 0x00, 0x00,
-                                           std::ceil(0xFF * rect.weight / 10)));
-            ctx.strokeRect(bl_rect, black);
-
-            x += rect.length * scale;
-            level_height = std::max(level_height, rect.height);
-        }
-        y -= level_height * scale;
-        ctx.setStrokeWidth(2);
-        ctx.strokeLine(BLLine(padding, y, padding + width * scale, y), black);
-    }
-
-    ctx.end();
-
-    img.writeToFile(filename.c_str());
 }
 
 }; // namespace strip_packing::io

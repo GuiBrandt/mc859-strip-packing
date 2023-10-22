@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.27)
 
 project(mc859 CXX)
 
-include(ExternalProject)
+include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -78,26 +78,34 @@ find_package(BRKGA REQUIRED)
 # yaml-cpp - Biblioteca para leitura de arquivos YAML.
 #
 # Nenhuma configuração adicional é necessária.
-ExternalProject_Add(YAML_CPP
+FetchContent_Declare(YAML_CPP
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp
   GIT_TAG        f732014 # yaml-cpp-0.8.0
   GIT_SHALLOW    true
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/vendor
 )
+FetchContent_MakeAvailable(YAML_CPP)
 
 # Blend2d - Biblioteca para renderização de gráficos vetoriais.
 #
 # Nenhuma configuração adicional é necessária.
-ExternalProject_Add(BLEND2D
+FetchContent_Declare(BLEND2D
   GIT_REPOSITORY https://github.com/blend2d/blend2d
   GIT_TAG        947a718
   GIT_SHALLOW    true
-  CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/vendor
-    -DBLEND2D_NO_JIT=true
-    -DBLEND2D_STATIC=true
-    -Wno-gnu
 )
+set(BLEND2D_NO_JIT ON)
+set(BLEND2D_STATIC ON)
+FetchContent_MakeAvailable(blend2d)
+
+# argparse - Biblioteca para processamento de argumentos de linha de comando.
+#
+# Nenhuma configuração adicional é necessária.
+FetchContent_Declare(ARGPARSE
+  GIT_REPOSITORY https://github.com/p-ranav/argparse
+  GIT_TAG        997da92 # v2.9
+  GIT_SHALLOW    true
+)
+FetchContent_MakeAvailable(argparse)
 
 #==============================================================================
 # Configuração de compilação
@@ -107,23 +115,24 @@ include_directories(
   ${LEMON_INCLUDE_DIR}
   ${GUROBI_INCLUDE_DIRS}
   ${BRKGA_INCLUDE_DIR}
-  ${CMAKE_BINARY_DIR}/vendor/include
   include)
-
-link_directories(${CMAKE_BINARY_DIR}/vendor/lib)
 
 find_package(Threads)
 find_package(OpenMP)
 
-add_executable(mc859-strip-packing src/main.cpp)
+add_executable(mc859-strip-packing-heuristics src/heuristics.cpp)
 
-target_compile_options(mc859-strip-packing PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(mc859-strip-packing PRIVATE yaml-cpp blend2d)
+target_compile_options(mc859-strip-packing-heuristics PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(mc859-strip-packing-heuristics PRIVATE yaml-cpp::yaml-cpp argparse::argparse blend2d::blend2d)
 
 if(Threads_FOUND)
-  target_link_libraries(mc859-strip-packing PRIVATE Threads::Threads)
+  target_link_libraries(mc859-strip-packing-heuristics PRIVATE Threads::Threads)
 endif()
 
 if(OpenMP_CXX_FOUND)
-  target_link_libraries(mc859-strip-packing PRIVATE OpenMP::OpenMP_CXX)
+  target_link_libraries(mc859-strip-packing-heuristics PRIVATE OpenMP::OpenMP_CXX)
 endif()
+
+add_executable(mc859-strip-packing-gen-instances src/gen_instances.cpp)
+target_compile_options(mc859-strip-packing-heuristics PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(mc859-strip-packing-heuristics PRIVATE yaml-cpp::yaml-cpp argparse::argparse)

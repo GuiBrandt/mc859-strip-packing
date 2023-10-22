@@ -1,7 +1,6 @@
 #ifndef STRIP_PACKING_HEURISTICS_HPP
 #define STRIP_PACKING_HEURISTICS_HPP
 
-#include "brkga_mp_ipr/chromosome.hpp"
 #include "defs.hpp"
 
 #include "util/first_fit.hpp"
@@ -125,16 +124,17 @@ static solution_t best_fit(const instance_t& instance,
 }
 
 /**
- * Heurística construtiva randomizada de first-fit em ordem decrescente de
- * prioridade. O(n lg n).
+ * Heurística construtiva randomizada de first-fit em ordem decrescente da
+ * proporção entre prioridade e altura. O(n lg n).
  *
- * A ideia da heurística é ordenar os itens da instância em ordem decrescente
- * de peso (com algum ruído, para permitir aleatorização) e sequencialmente
- * encaixar cada item no nível mais baixo que tem espaço suficiente para ele.
+ * A ideia da heurística é tentar ordenar os itens da instância em ordem
+ * decrescente de peso e crescente de altura (com algum ruído, para permitir
+ * aleatorização) , e sequencialmente encaixar cada item no nível mais baixo que
+ * tem espaço suficiente para ele.
  */
 template <typename URBG,
           typename NoiseDist = std::uniform_real_distribution<dim_type>>
-solution_t randomized_first_fit_decreasing_weight(
+solution_t randomized_first_fit_decreasing_weight_height_ratio(
     instance_t instance, URBG&& rng,
     NoiseDist noise = std::uniform_real_distribution<>(-1.0, 1.0)) {
 
@@ -150,8 +150,9 @@ solution_t randomized_first_fit_decreasing_weight(
     // diretamente, por exemplo) para permitir referenciar a posição original de
     // cada retângulo na instância original.
     std::vector<size_t> permutation = util::sort_permutation(
-        instance.rects,
-        [](const auto& a, const auto& b) { return a.weight > b.weight; });
+        instance.rects, [](const auto& a, const auto& b) {
+            return a.weight * b.height > b.weight * a.height;
+        });
 
     return first_fit(instance, permutation);
 }
@@ -212,19 +213,59 @@ class brkga_mp_ipr {
      * Executa o algoritmo com os parâmetros dados.
      */
     template <typename URBG>
-    solution_t operator()(URBG&& rng, BRKGA::BrkgaParams brkga_params,
-                          BRKGA::ControlParams control_params,
-                          unsigned max_threads = 1) const {
+    solution_t run(URBG&& rng, BRKGA::BrkgaParams brkga_params,
+                   BRKGA::ControlParams control_params,
+                   unsigned max_threads = 1) const {
         next_fit_decoder decoder(m_instance);
+
+        brkga_params.custom_shaking = [&](double lower_bound,
+                                          double upper_bound, auto& populations,
+                                          auto& shaken) {
+            std::uniform_real_distribution<> uniform(0, 1);
+            double chance =
+                std::uniform_real_distribution<>(lower_bound, upper_bound)(rng);
+
+            std::cout << "Shuffling levels and randomly changing order of "
+                         "rectangles with probability "
+                      << chance << std::endl;
+
+            for (unsigned i = 0; i < populations.size(); i++) {
+                auto& population = populations[i]->chromosomes;
+                for (unsigned j = 0; j < population.size(); j++) {
+                    auto& chromosome = population[j];
+                    solution_t solution = decoder.rebuild(chromosome);
+
+                    for (auto& level : solution) {
+                        std::shuffle(level.begin(), level.end(), rng);
+                    }
+
+                    bool change = false;
+
+                    chromosome = encode(solution);
+                    for (auto& gene : chromosome) {
+                        if (uniform(rng) <= chance) {
+                            gene = uniform(rng);
+                            change = true;
+                        }
+                    }
+
+                    if (change) {
+                        shaken.push_back({i, j});
+                    }
+                }
+            }
+        };
 
         algorithm brkga(decoder, BRKGA::Sense::MINIMIZE, rng(),
                         chromosome_size(), brkga_params, max_threads);
 
         set_initial_population(brkga);
         observe_solution_progress(brkga);
+
         auto status = brkga.run(control_params);
         std::cout << "Ran " << status.current_iteration << " iterations"
                   << std::endl;
+
         return decoder.rebuild(status.best_chromosome);
     }
 
