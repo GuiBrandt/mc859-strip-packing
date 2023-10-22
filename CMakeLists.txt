@@ -75,6 +75,30 @@ find_package(GUROBI) # TODO: marcar como REQUIRED quando necessário
 #   DOI 10.1016/j.ejor.2019.11.037
 find_package(BRKGA REQUIRED)
 
+# yaml-cpp - Biblioteca para leitura de arquivos YAML.
+#
+# Nenhuma configuração adicional é necessária.
+ExternalProject_Add(YAML_CPP
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp
+  GIT_TAG        f732014 # yaml-cpp-0.8.0
+  GIT_SHALLOW    true
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/vendor
+)
+
+# Blend2d - Biblioteca para renderização de gráficos vetoriais.
+#
+# Nenhuma configuração adicional é necessária.
+ExternalProject_Add(BLEND2D
+  GIT_REPOSITORY https://github.com/blend2d/blend2d
+  GIT_TAG        947a718
+  GIT_SHALLOW    true
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/vendor
+    -DBLEND2D_NO_JIT=true
+    -DBLEND2D_STATIC=true
+    -Wno-gnu
+)
+
 #==============================================================================
 # Configuração de compilação
 #==============================================================================
@@ -83,7 +107,10 @@ include_directories(
   ${LEMON_INCLUDE_DIR}
   ${GUROBI_INCLUDE_DIRS}
   ${BRKGA_INCLUDE_DIR}
+  ${CMAKE_BINARY_DIR}/vendor/include
   include)
+
+link_directories(${CMAKE_BINARY_DIR}/vendor/lib)
 
 find_package(Threads)
 find_package(OpenMP)
@@ -91,11 +118,12 @@ find_package(OpenMP)
 add_executable(mc859-strip-packing src/main.cpp)
 
 target_compile_options(mc859-strip-packing PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(mc859-strip-packing PRIVATE yaml-cpp blend2d)
 
 if(Threads_FOUND)
-  target_link_libraries(mc859-strip-packing PUBLIC Threads::Threads)
+  target_link_libraries(mc859-strip-packing PRIVATE Threads::Threads)
 endif()
 
 if(OpenMP_CXX_FOUND)
-  target_link_libraries(mc859-strip-packing PUBLIC OpenMP::OpenMP_CXX)
+  target_link_libraries(mc859-strip-packing PRIVATE OpenMP::OpenMP_CXX)
 endif()

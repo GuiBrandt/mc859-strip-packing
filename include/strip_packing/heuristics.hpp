@@ -69,7 +69,6 @@ static solution_t first_fit(const instance_t& instance,
         }
     }
 
-    normalize(instance, solution);
     return solution;
 }
 
@@ -122,7 +121,6 @@ static solution_t best_fit(const instance_t& instance,
         }
     }
 
-    normalize(instance, solution);
     return solution;
 }
 
