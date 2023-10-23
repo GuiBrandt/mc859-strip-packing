@@ -1,0 +1,49 @@
+# Instância adversária para a heurística de fist-fit decreasing weight/height
+# ratio.
+#
+# Exploramos o único atributo dos retângulos que a heurística não considera:
+# a largura.
+#
+# A instância tem N + 1 retângulos (para N qualquer):
+# - N retângulos de largura L/N, com altura 1 e peso K
+# - 1 retângulo de largura L, com altura 1, e peso K + 1
+#
+# A heurística preenche o primeiro nível com o único retângulo de peso K + 1, o
+# que impede de colocar os N retângulos de peso K no primeiro nível.
+#
+# Nesse caso, a solução ótima teria custo K + 1, mas a heurística devolve uma
+# de custo N * K, de forma que a diferença pode ser tão grande quanto se
+# queira.
+
+recipient_length: 20
+rects:
+  # Retângulo mais pesado, preenche um nível completo.
+  - height: 1
+    length: 20
+    weight: 1.000000001e9
+
+  # Vários retângulos, um pouco mais leves, mas que cabem todos em um único
+  # nível. 
+  - &small
+    height: 1
+    length: 1
+    weight: 1e9
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small
+  - *small

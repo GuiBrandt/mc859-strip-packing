@@ -16,6 +16,8 @@ struct rect_t {
     dim_type length;  /// Largura
     dim_type height;  /// Altura
     cost_type weight; /// Peso/prioridade
+
+    double area() const { return length * height; }
 };
 
 /*! Estrutura para uma instância do problema. */

@@ -93,7 +93,7 @@ static solution_t best_fit(const instance_t& instance,
     };
     struct compare_bin_record {
         bool operator()(const bin_record& a, const bin_record& b) const {
-            return a.capacity < b.capacity;
+            return a.capacity <= b.capacity;
         }
     };
     std::set<bin_record, compare_bin_record> levels;
@@ -128,13 +128,13 @@ static solution_t best_fit(const instance_t& instance,
  * proporção entre prioridade e altura. O(n lg n).
  *
  * A ideia da heurística é tentar ordenar os itens da instância em ordem
- * decrescente de peso e crescente de altura (com algum ruído, para permitir
- * aleatorização) , e sequencialmente encaixar cada item no nível mais baixo que
- * tem espaço suficiente para ele.
+ * decrescente de densidade (com algum ruído, para permitir aleatorização), e
+ * sequencialmente encaixar cada item no nível mais baixo que tem espaço
+ * suficiente para ele.
  */
 template <typename URBG,
           typename NoiseDist = std::uniform_real_distribution<dim_type>>
-solution_t randomized_first_fit_decreasing_weight_height_ratio(
+solution_t randomized_first_fit_decreasing_density(
     instance_t instance, URBG&& rng,
     NoiseDist noise = std::uniform_real_distribution<>(-1.0, 1.0)) {
 
@@ -145,13 +145,13 @@ solution_t randomized_first_fit_decreasing_weight_height_ratio(
         rect.weight = std::max(0.0, rect.weight + noise(rng));
     }
 
-    // Computamos um vetor de permutação para a ordenação por peso.
-    // Isso é feito (no lugar de ordenar a lista de retângulos por peso
-    // diretamente, por exemplo) para permitir referenciar a posição original de
-    // cada retângulo na instância original.
+    // Computamos um vetor de permutação para a ordenação por densidade.
+    // Isso é feito (no lugar de ordenar a lista de retângulos diretamente, por
+    // exemplo) para permitir referenciar a posição original de cada retângulo
+    // na instância original.
     std::vector<size_t> permutation = util::sort_permutation(
         instance.rects, [](const auto& a, const auto& b) {
-            return a.weight * b.height > b.weight * a.height;
+            return a.weight * b.area() > b.weight * a.area();
         });
 
     return first_fit(instance, permutation);

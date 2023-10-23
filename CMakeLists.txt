@@ -95,7 +95,7 @@ FetchContent_Declare(BLEND2D
 )
 set(BLEND2D_NO_JIT ON)
 set(BLEND2D_STATIC ON)
-FetchContent_MakeAvailable(blend2d)
+FetchContent_MakeAvailable(BLEND2D)
 
 # argparse - Biblioteca para processamento de argumentos de linha de comando.
 #
@@ -105,7 +105,7 @@ FetchContent_Declare(ARGPARSE
   GIT_TAG        997da92 # v2.9
   GIT_SHALLOW    true
 )
-FetchContent_MakeAvailable(argparse)
+FetchContent_MakeAvailable(ARGPARSE)
 
 #==============================================================================
 # Configuração de compilação
@@ -123,7 +123,10 @@ find_package(OpenMP)
 add_executable(mc859-strip-packing-heuristics src/heuristics.cpp)
 
 target_compile_options(mc859-strip-packing-heuristics PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(mc859-strip-packing-heuristics PRIVATE yaml-cpp::yaml-cpp argparse::argparse blend2d::blend2d)
+target_link_libraries(mc859-strip-packing-heuristics PRIVATE
+  yaml-cpp::yaml-cpp
+  argparse::argparse
+  blend2d::blend2d)
 
 if(Threads_FOUND)
   target_link_libraries(mc859-strip-packing-heuristics PRIVATE Threads::Threads)
@@ -134,5 +137,7 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 add_executable(mc859-strip-packing-gen-instances src/gen_instances.cpp)
-target_compile_options(mc859-strip-packing-heuristics PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(mc859-strip-packing-heuristics PRIVATE yaml-cpp::yaml-cpp argparse::argparse)
+target_compile_options(mc859-strip-packing-gen-instances PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(mc859-strip-packing-gen-instances PRIVATE
+  yaml-cpp::yaml-cpp
+  argparse::argparse)

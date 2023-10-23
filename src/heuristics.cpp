@@ -1,9 +1,8 @@
-#include "strip_packing/heuristics.hpp"
-#include "strip_packing/defs.hpp"
 #include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <stdexcept>
+
 #include <strip_packing.hpp>
 #include <strip_packing/io.hpp>
 #include <strip_packing/render.hpp>
@@ -11,8 +10,6 @@
 #include <argparse/argparse.hpp>
 
 #include <brkga_mp_ipr/brkga_mp_ipr.hpp>
-
-#include <numeric>
 
 using namespace strip_packing;
 
@@ -44,8 +41,7 @@ class heuristics_runner {
         cost_type best_cost = -1;
         for (size_t i = 0; i < samples; i++) {
             auto solution = heuristics::constructive::
-                randomized_first_fit_decreasing_weight_height_ratio(
-                    m_instance, rng, noise);
+                randomized_first_fit_decreasing_density(m_instance, rng, noise);
             solutions.push_back(solution);
 
             cost_type cost = m_instance.cost(solution);
@@ -135,8 +131,6 @@ class heuristics_runner {
         std::cout << std::endl;
         render::render_solution(m_instance, first_fit_solution,
                                 "first-fit.png");
-
-        run_best_fit(rng, 1250, initial);
 
         std::cout
             << "[Randomized best-fit increasing height heuristic solution]"
