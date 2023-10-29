@@ -11,6 +11,9 @@ project(mc859 CXX)
 
 include(FetchContent)
 
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -90,11 +93,13 @@ FetchContent_MakeAvailable(YAML_CPP)
 # Nenhuma configuração adicional é necessária.
 FetchContent_Declare(BLEND2D
   GIT_REPOSITORY https://github.com/blend2d/blend2d
-  GIT_TAG        947a718
+  GIT_TAG        f25c7a2
   GIT_SHALLOW    true
 )
+
 set(BLEND2D_NO_JIT ON)
 set(BLEND2D_STATIC ON)
+
 FetchContent_MakeAvailable(BLEND2D)
 
 # argparse - Biblioteca para processamento de argumentos de linha de comando.
@@ -107,10 +112,6 @@ FetchContent_Declare(ARGPARSE
 )
 FetchContent_MakeAvailable(ARGPARSE)
 
-#==============================================================================
-# Configuração de compilação
-#==============================================================================
-
 include_directories(
   ${LEMON_INCLUDE_DIR}
   ${GUROBI_INCLUDE_DIRS}
@@ -120,24 +121,38 @@ include_directories(
 find_package(Threads)
 find_package(OpenMP)
 
+#==============================================================================
+# Configuração de compilação
+#==============================================================================
+#------------------------------------------------------------------------------
+# Heurísticas
+#------------------------------------------------------------------------------
 add_executable(mc859-strip-packing-heuristics src/heuristics.cpp)
 
-target_compile_options(mc859-strip-packing-heuristics PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_options(mc859-strip-packing-heuristics PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 target_link_libraries(mc859-strip-packing-heuristics PRIVATE
   yaml-cpp::yaml-cpp
   argparse::argparse
   blend2d::blend2d)
 
+# Habilita threads e OpenMP se possível (usado no BRKGA).
 if(Threads_FOUND)
   target_link_libraries(mc859-strip-packing-heuristics PRIVATE Threads::Threads)
 endif()
-
 if(OpenMP_CXX_FOUND)
   target_link_libraries(mc859-strip-packing-heuristics PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+#------------------------------------------------------------------------------
+# Gerador de instâncias
+#------------------------------------------------------------------------------
 add_executable(mc859-strip-packing-gen-instances src/gen_instances.cpp)
-target_compile_options(mc859-strip-packing-gen-instances PRIVATE -Wall -Wextra -Wpedantic)
+
+target_compile_options(mc859-strip-packing-gen-instances PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 target_link_libraries(mc859-strip-packing-gen-instances PRIVATE
   yaml-cpp::yaml-cpp
   argparse::argparse)

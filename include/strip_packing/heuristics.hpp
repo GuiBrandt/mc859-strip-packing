@@ -25,8 +25,8 @@ namespace constructive {
  * Insere retângulos em ordem, criando um novo nível sempre que um retângulo
  * não couber no nível atual.
  */
-static solution_t next_fit(const instance_t& instance,
-                           const std::vector<size_t>& permutation) {
+static inline solution_t next_fit(const instance_t& instance,
+                                  const std::vector<size_t>& permutation) {
     solution_t solution;
     dim_type used = instance.recipient_length;
     for (size_t i = 0; i < permutation.size(); i++) {
@@ -47,8 +47,8 @@ static solution_t next_fit(const instance_t& instance,
 /**
  * Heurística construtiva determinística de first-fit. O(n lg n).
  */
-static solution_t first_fit(const instance_t& instance,
-                            const std::vector<size_t>& permutation) {
+static inline solution_t first_fit(const instance_t& instance,
+                                   const std::vector<size_t>& permutation) {
     solution_t solution(1);
 
     // Construímos a solução baseado na estratégia de first-fit, adicionando
@@ -74,8 +74,8 @@ static solution_t first_fit(const instance_t& instance,
 /**
  * Heurística construtiva determinística de best-fit. O(n lg n).
  */
-static solution_t best_fit(const instance_t& instance,
-                           const std::vector<size_t>& permutation) {
+static inline solution_t best_fit(const instance_t& instance,
+                                  const std::vector<size_t>& permutation) {
     // Construímos a solução baseado na estratégia de best-fit, adicionando
     // cada item em sequência descrescente de altura ao nível no qual ele tem o
     // "melhor encaixe", isto é, aquele em que o espaço restante ao adicionar o
@@ -218,43 +218,7 @@ class brkga_mp_ipr {
                    unsigned max_threads = 1) const {
         next_fit_decoder decoder(m_instance);
 
-        brkga_params.custom_shaking = [&](double lower_bound,
-                                          double upper_bound, auto& populations,
-                                          auto& shaken) {
-            std::uniform_real_distribution<> uniform(0, 1);
-            double chance =
-                std::uniform_real_distribution<>(lower_bound, upper_bound)(rng);
-
-            std::cout << "Shuffling levels and randomly changing order of "
-                         "rectangles with probability "
-                      << chance << std::endl;
-
-            for (unsigned i = 0; i < populations.size(); i++) {
-                auto& population = populations[i]->chromosomes;
-                for (unsigned j = 0; j < population.size(); j++) {
-                    auto& chromosome = population[j];
-                    solution_t solution = decoder.rebuild(chromosome);
-
-                    for (auto& level : solution) {
-                        std::shuffle(level.begin(), level.end(), rng);
-                    }
-
-                    bool change = false;
-
-                    chromosome = encode(solution);
-                    for (auto& gene : chromosome) {
-                        if (uniform(rng) <= chance) {
-                            gene = uniform(rng);
-                            change = true;
-                        }
-                    }
-
-                    if (change) {
-                        shaken.push_back({i, j});
-                    }
-                }
-            }
-        };
+        brkga_params.custom_shaking = shaking_function(rng, decoder);
 
         algorithm brkga(decoder, BRKGA::Sense::MINIMIZE, rng(),
                         chromosome_size(), brkga_params, max_threads);
@@ -338,6 +302,50 @@ class brkga_mp_ipr {
                 }
                 return true;
             });
+    }
+
+    /*! Função de perturbação para as soluções do algoritmo. */
+    template <typename URBG>
+    decltype(BRKGA::BrkgaParams::custom_shaking)
+    shaking_function(URBG&& rng, next_fit_decoder& decoder) const {
+        return [&](double lower_bound, double upper_bound, auto& populations,
+                   auto& shaken) {
+            std::uniform_real_distribution<> uniform(0, 1);
+
+            double chance =
+                std::uniform_real_distribution<>(lower_bound, upper_bound)(rng);
+
+            std::cout << "Shuffling levels and randomly changing order of "
+                         "rectangles with probability "
+                      << chance << std::endl;
+
+            for (unsigned i = 0; i < populations.size(); i++) {
+                auto& population = populations[i]->chromosomes;
+                for (unsigned j = 0; j < population.size(); j++) {
+                    auto& chromosome = population[j];
+
+                    // Embaralha os níveis da solução.
+                    solution_t solution = decoder.rebuild(chromosome);
+                    for (auto& level : solution) {
+                        std::shuffle(level.begin(), level.end(), rng);
+                    }
+
+                    // Retorna a solução para a representação como cromossomo e
+                    // modifica genes de forma aleatória.
+                    bool change = false;
+                    chromosome = encode(solution);
+                    for (auto& gene : chromosome) {
+                        if (uniform(rng) <= chance) {
+                            gene = uniform(rng);
+                            change = true;
+                        }
+                    }
+                    if (change) {
+                        shaken.push_back({i, j});
+                    }
+                }
+            }
+        };
     }
 
     const instance_t& m_instance;

@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstddef>
 #include <fstream>
+#include <random>
 #include <stdexcept>
 
 #include <strip_packing.hpp>
@@ -23,6 +24,7 @@ class heuristics_runner {
         double first_fit_random_deviations;
         size_t best_fit_samples;
         double best_fit_random_deviations;
+        std::string output;
     };
 
   private:
@@ -32,6 +34,12 @@ class heuristics_runner {
     double m_weight_stddev;
     double m_height_stddev;
 
+    /**
+     * Gera soluções para a instância do problema utilizando a heurística de
+     * first-fit aleatorizada.
+     *
+     * Devolve a melhor solução dentre todas as soluções geradas.
+     */
     template <class URBG>
     solution_t run_first_fit(URBG&& rng, size_t samples,
                              std::vector<solution_t>& solutions) {
@@ -53,6 +61,12 @@ class heuristics_runner {
         return best;
     }
 
+    /**
+     * Gera soluções para a instância do problema utilizando a heurística de
+     * best-fit aleatorizada.
+     *
+     * Devolve a melhor solução dentre todas as soluções geradas.
+     */
     template <class URBG>
     solution_t run_best_fit(URBG&& rng, size_t samples,
                             std::vector<solution_t>& solutions) {
@@ -75,6 +89,11 @@ class heuristics_runner {
         return best;
     }
 
+    /**
+     * Melhora soluções utilizando o algoritmo BRKGA-MP-IPR.
+     *
+     * Devolve a melhor solução obtida.
+     */
     template <class URBG>
     solution_t run_brkga(URBG&& rng, const BRKGA::BrkgaParams& brkga_params,
                          const BRKGA::ControlParams& control_params,
@@ -88,6 +107,9 @@ class heuristics_runner {
     heuristics_runner(const instance_t& instance, const config& conf)
         : m_instance(instance), m_config(conf) {
 
+        // Computa o desvio padrão do peso e altura dos retângulos, usados para
+        // adicionar perturbações aleatórias nas instâncias para as heurísticas
+        // aleatorizadas.
         double acc_weight = 0.0;
         double acc_height = 0.0;
         for (auto& rect : instance.rects) {
@@ -114,37 +136,49 @@ class heuristics_runner {
                   << std::endl;
     }
 
+    /*! Executa as heurísticas. */
     void run() {
-        std::mt19937_64 rng(m_config.random_seed);
+        std::ofstream out;
+        std::minstd_rand rng(m_config.random_seed);
 
-        std::cout << std::fixed << std::setprecision(3);
-        io::print_instance(m_instance);
+        out << std::fixed << std::setprecision(3);
+        out.open(m_config.output + "/instance.txt");
+        io::print_instance(out, m_instance);
+        out.close();
 
         std::vector<solution_t> initial;
-        initial.reserve(1000);
+        initial.reserve(m_config.first_fit_samples + m_config.best_fit_samples);
 
-        std::cout << "[Randomized first-fit decreasing weight/height ratio "
-                     "heuristic solution]"
-                  << std::endl;
-        auto first_fit_solution = run_first_fit(rng, 500, initial);
-        io::print_solution(m_instance, first_fit_solution);
-        std::cout << std::endl;
+        out.open(m_config.output + "/first-fit.txt");
+        out
+            << "[Randomized first-fit decreasing density heuristic solution]"
+            << std::endl;
+        auto first_fit_solution =
+            run_first_fit(rng, m_config.first_fit_samples, initial);
+        io::print_solution(out, m_instance, first_fit_solution);
+        out.close();
         render::render_solution(m_instance, first_fit_solution,
-                                "first-fit.png");
+                                m_config.output + "/first-fit.png");
 
-        std::cout
+        out.open(m_config.output + "/best-fit.txt");
+        out
             << "[Randomized best-fit increasing height heuristic solution]"
             << std::endl;
-        auto best_fit_solution = run_best_fit(rng, 500, initial);
-        io::print_solution(m_instance, best_fit_solution);
-        std::cout << std::endl;
-        render::render_solution(m_instance, best_fit_solution, "best-fit.png");
+        auto best_fit_solution =
+            run_best_fit(rng, m_config.best_fit_samples, initial);
+        io::print_solution(out, m_instance, best_fit_solution);
+        out.close();
+        render::render_solution(m_instance, best_fit_solution,
+                                m_config.output + "/best-fit.png");
 
         if (m_config.brkga_enabled) {
-            std::cout << "[BRKGA]" << std::endl;
+            out.open(m_config.output + "/brkga.txt");
+            out << "[BRKGA]" << std::endl;
             auto [brkga_params, control_params] =
                 BRKGA::readConfiguration(m_config.brkga_config);
 
+            // Garante que cada população seja composta inicialmente por, no
+            // máximo, 50% de soluções heurísticas.
             brkga_params.population_size =
                 std::max(brkga_params.population_size,
                          unsigned(m_config.best_fit_samples +
@@ -153,13 +187,15 @@ class heuristics_runner {
 
             auto brkga_solution = run_brkga(rng, brkga_params, control_params,
                                             std::move(initial));
-            io::print_solution(m_instance, brkga_solution);
-            std::cout << std::endl;
-            render::render_solution(m_instance, brkga_solution, "brkga.png");
+            io::print_solution(out, m_instance, brkga_solution);
+            out.close();
+            render::render_solution(m_instance, brkga_solution,
+                                    m_config.output + "/brkga.png");
         }
     }
 };
 
+/*! Ponto de entrada. */
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("mc859-strip-packing-heuristics");
 
@@ -167,6 +203,11 @@ int main(int argc, char** argv) {
         .metavar("N")
         .help("seed for the random number generator.")
         .scan<'u', unsigned>();
+
+    program.add_argument("-o", "--output")
+        .metavar("DIR")
+        .default_value<std::string>(".")
+        .help("output directory.");
 
     program.add_argument("--no-brkga")
         .default_value(false)
@@ -240,7 +281,7 @@ int main(int argc, char** argv) {
         .best_fit_samples = program.get<unsigned>("--best-fit"),
         .best_fit_random_deviations =
             program.get<double>("--best-fit-deviations"),
-    };
+        .output = program.get("--output")};
 
     heuristics_runner(instance, conf).run();
 }

@@ -55,43 +55,46 @@ template <> struct convert<strip_packing::instance_t> {
 
 namespace strip_packing::io {
 
-static instance_t read_instance(std::istream& input) {
+static inline instance_t read_instance(std::istream& input) {
     return YAML::Load(input).as<instance_t>();
 }
 
-static std::ostream& write_instance(std::ostream& output,
-                                    const instance_t& instance) {
+static inline std::ostream& write_instance(std::ostream& output,
+                                           const instance_t& instance) {
     return output << YAML::Node(instance);
 }
 
-static void print_instance(instance_t instance) {
-    std::cout << "Recipient length: " << instance.recipient_length << std::endl;
-    std::cout << "Rects (" << instance.rects.size() << "): " << std::endl;
+static inline std::ostream& print_instance(std::ostream& out, instance_t instance) {
+    out << "Recipient length: " << instance.recipient_length << std::endl;
+    out << "Rects (" << instance.rects.size() << "): " << std::endl;
     for (const auto& rect : instance.rects) {
-        std::cout << rect.length << "x" << rect.height << "(" << rect.weight
+        out << rect.length << "x" << rect.height << "(" << rect.weight
                   << ") ";
     }
-    std::cout << std::endl << std::endl;
+    out << std::endl << std::endl;
+    return out;
 }
 
-static void print_solution(instance_t instance, solution_t solution) {
-    std::cout << "Cost: " << instance.cost(solution) << std::endl;
+static inline std::ostream&
+print_solution(std::ostream& out, instance_t instance, solution_t solution) {
+    out << "Cost: " << instance.cost(solution) << std::endl;
     dim_type h = 0;
     for (size_t i = 0; i < solution.size(); i++) {
-        std::cout << "(level " << std::right << std::setw(2) << i
-                  << ", h = " << std::setw(4) << h << ") ";
+        out << "(level " << std::right << std::setw(2) << i
+            << ", h = " << std::setw(4) << h << ") ";
         dim_type max_h = 0;
         dim_type L = 0;
         for (const auto& j : solution[i]) {
             L += instance.rects[j].length;
-            std::cout << std::setw(3) << std::right << j << ":" << std::setw(3)
-                      << std::left << instance.rects[j].weight << " ";
+            out << std::setw(3) << std::right << j << ":" << std::setw(3)
+                << std::left << instance.rects[j].weight << " ";
             max_h = std::max(max_h, instance.rects[j].height);
         }
-        std::cout << " (L = " << L << ")";
+        out << " (L = " << L << ")";
         h += max_h;
-        std::cout << std::endl;
+        out << std::endl;
     }
+    return out;
 }
 
 }; // namespace strip_packing::io

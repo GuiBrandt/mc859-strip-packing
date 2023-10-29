@@ -82,14 +82,6 @@ struct instance_t {
 /*! Tipo para uma solução do problema. */
 using solution_t = instance_t::partition_t;
 
-static void normalize(const instance_t& instance, solution_t& solution) {
-    for (auto& level : solution) {
-        std::sort(level.begin(), level.end(), [&instance](size_t i, size_t j) {
-            return instance.rects[i].height > instance.rects[j].height;
-        });
-    }
-}
-
 } // namespace strip_packing
 
 #endif // STRIP_PACKING_DEFS_HPP

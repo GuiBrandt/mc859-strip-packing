@@ -89,6 +89,11 @@ class solution_renderer {
     /*! Desenha uma solução e salva em um arquivo. */
     void render(std::string filename, double scale = 8,
                 double horz_padding = 24, double vert_padding = 24) const {
+
+        if (figure_height(scale) > 5000) {
+            scale = 5000.0 / m_recipient_height;
+        }
+
         double img_width = std::ceil(figure_width(scale) + horz_padding * 2);
         double img_height = std::ceil(figure_height(scale) + vert_padding * 2);
 

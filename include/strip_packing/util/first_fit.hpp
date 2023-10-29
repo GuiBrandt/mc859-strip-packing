@@ -206,7 +206,10 @@ class first_fit_tree {
         }
     }
 
-    /*! Encontra o primeiro índice com valor maior ou igual ao valor dado. */
+    /**
+     * Encontra o primeiro índice com valor maior ou igual ao valor dado.
+     * O(log n).
+     */
     size_t first_fit(value_type value) const {
         node_t node = root();
         if (empty() || m_compare(m_summary[node], value)) {
@@ -229,7 +232,7 @@ class first_fit_tree {
         return node;
     }
 
-    /*! Diminui o valor de uma posição no conjunto. */
+    /*! Diminui o valor de uma posição no conjunto. O(log n). */
     void decrease(size_type index, T delta) {
         node_t node = index;
         m_data[node] -= delta;
@@ -245,7 +248,7 @@ class first_fit_tree {
         }
     }
 
-    /*! Adiciona um valor ao fim do conjunto. */
+    /*! Adiciona um valor ao fim do conjunto. O(log n) amortizado. */
     void push_back(T value) {
         reserve(m_size + 1);
 

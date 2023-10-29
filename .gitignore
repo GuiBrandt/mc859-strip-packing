@@ -1,4 +1,5 @@
 build/
+output/
 .cache
 .vscode/*
 !.vscode/settings.json
@@ -11,3 +12,4 @@ build/
 .history
 .ionide
 *.png
+*.txt

@@ -6,8 +6,9 @@
 
 namespace strip_packing::util {
 
+/*! Retorna um vetor de permutação que ordena um vetor dado. */
 template <typename T, typename Compare = std::less<T>>
-std::vector<size_t> sort_permutation(std::vector<T> vec, Compare compare = std::less<T>()) {
+std::vector<size_t> sort_permutation(const std::vector<T>& vec, Compare compare = std::less<T>()) {
     std::vector<size_t> permutation;
     permutation.resize(vec.size());
     for (size_t i = 1; i < vec.size(); i++) {
