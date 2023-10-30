@@ -6,20 +6,20 @@
 # A instância tem dois retângulos (para N qualquer):
 # - Um retângulo de largura L, com altura 1 e peso K
 # - Um retângulo de largura 1/M, altura M (para M tão grande quanto se queira),
-#   e peso K
+#   e peso K + ε
 # 
-# Como o primeiro retângulo tem área 1 e peso K, ele é mais denso, e portanto
-# priorizado pelo algoritmo; mas então o segundo retângulo necessariamente fica
-# no nível acima, e portanto a solução tem custo M * K.
+# Como o segundo retângulo tem área 1 e peso K + ε, ele é mais denso, e
+# portanto priorizado pelo algoritmo; mas então o primeiro retângulo
+# necessariamente fica no nível acima, e portanto a solução tem custo M * K.
 #
 # Claramente, a solução ótima tem peso K. Logo, é possível tornar a diferença
 # entre a solução ótima e a solução heurística tão grande quanto se queira.
 
 recipient_length: 1
 rects:
-  - height: 1e3
-    length: 1e-3
-    weight: 1
   - height: 1
     length: 1
     weight: 1
+  - height: 1e15
+    length: 1e-15
+    weight: 1.000000000000001
