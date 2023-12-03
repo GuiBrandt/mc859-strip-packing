@@ -83,7 +83,7 @@ find_package(BRKGA REQUIRED)
 # Nenhuma configuração adicional é necessária.
 FetchContent_Declare(YAML_CPP
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp
-  GIT_TAG        f732014 # yaml-cpp-0.8.0
+  GIT_TAG        0.8.0
   GIT_SHALLOW    true
 )
 FetchContent_MakeAvailable(YAML_CPP)
@@ -93,7 +93,7 @@ FetchContent_MakeAvailable(YAML_CPP)
 # Nenhuma configuração adicional é necessária.
 FetchContent_Declare(BLEND2D
   GIT_REPOSITORY https://github.com/blend2d/blend2d
-  GIT_TAG        f25c7a2
+  GIT_TAG        master
   GIT_SHALLOW    true
 )
 
@@ -107,7 +107,7 @@ FetchContent_MakeAvailable(BLEND2D)
 # Nenhuma configuração adicional é necessária.
 FetchContent_Declare(ARGPARSE
   GIT_REPOSITORY https://github.com/p-ranav/argparse
-  GIT_TAG        997da92 # v2.9
+  GIT_TAG        v2.9
   GIT_SHALLOW    true
 )
 FetchContent_MakeAvailable(ARGPARSE)
