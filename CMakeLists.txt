@@ -46,6 +46,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+# LEMON - Biblioteca de otimização em redes.
+#
+# Configure a variável LEMON_DIR no CMAKE ou a variável de ambiente LEMON_HOME.
+#
+# Veja o arquivo cmake/FindLEMON.cmake para mais detalhes de como a biblioteca
+# é configurada.
+find_package(LEMON REQUIRED)
+
 # Gurobi - Solver de otimização matemática.
 #
 # Configure a variável GUROBI_DIR no CMAKE ou a variável de ambiente
@@ -107,6 +115,7 @@ FetchContent_MakeAvailable(ARGPARSE)
 
 include_directories(
   ${GUROBI_INCLUDE_DIRS}
+  ${LEMON_INCLUDE_DIRS}
   ${BRKGA_INCLUDE_DIR}
   include)
 
@@ -126,6 +135,7 @@ target_link_libraries(mc859-strip-packing PRIVATE
   argparse::argparse
   blend2d::blend2d
   ${GUROBI_CXX_LIBRARY}
+  ${LEMON_LIBRARY}
   ${GUROBI_C_LIBRARY})
 
 #------------------------------------------------------------------------------

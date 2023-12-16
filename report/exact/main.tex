@@ -1,0 +1,113 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[brazilian]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{hyperref}
+% \usepackage{pgfplots}
+% \usepackage{subfig}
+
+\usepackage[ruled,portuguese]{algorithm2e}
+
+\title{MC859 - Relatório 2: Parte Exata}
+\author{Guilherme Guidotti Brandt (235970)}
+\date{}
+
+\newtheorem*{prop}{Proposição}
+\newtheorem*{cor}{Corolário}
+
+\begin{document}
+
+\maketitle
+
+\section{Introdução}
+
+O problema escolhido foi o problema de Strip Packing em Níveis com Pesos.
+
+\section{Formulação}
+
+A formulação básica utilizada para o problema é a seguinte:
+
+\begin{align}
+    (\mathcal{SP})\quad
+        &\min \sum_{i \in R} w_i y_i\nonumber\\
+    \text{s.a.}\quad
+        &\sum_{j \in N} x_{ij} = 1                                  & \forall i \in R\\
+        &\sum_{i \in R} l_i x_{ij} \leq L                           & \forall j \in N\\
+        &y_i + M_j (1 - x_{ij}) - \sum_{k = 1}^{j - 1} a_k \geq 0   & \forall i \in R, j \in N\\
+        &a_j - h_i x_{ij} \geq 0                                    & \forall i \in R, j \in N\\
+        \nonumber\\
+        &x_{ij} \in \{0, 1\}                                        & \forall i \in R, j \in N\nonumber\\
+        &y_i \in \mathbb{R}_{\geq 0}                                & \forall i \in R\nonumber\\
+        &a_j \in \mathbb{R}_{\geq 0}                                & \forall j \in N\nonumber
+\end{align}
+
+\begin{align}
+    (DW)\quad
+        &\min \sum_{i \in R} w_i y_i \nonumber\\
+    \text{s.a.}\quad
+        &\sum_{j \in N} \sum_k x_i^k \lambda_{jk} = 1       & \forall i \in R\\
+        &a_j - h_i \sum_k x_i^k \lambda_{jk} \geq 0                            & \forall i \in R, j \in N\\
+        &y_i + M_j \left(1 - \sum_k x_i^k \lambda_{jk} \right) - \sum_{l = 1}^{j - 1} a_j \geq 0 & \forall i \in R, j \in N\\
+        &\sum_k \lambda_{jk} = 1                            & \forall j \in N\\
+        \nonumber\\
+        &\lambda_{jk} \in \mathbb{R}_{\geq 0}               & \forall j \in N\nonumber\\
+        &y_i \in \mathbb{R}_{\geq 0}                        & \forall i \in R\nonumber\\
+        &a_j \in \mathbb{R}_{\geq 0}                        & \forall j \in R\nonumber
+\end{align}
+
+\begin{align}
+    (PR)\quad
+        &\zeta^j = \min - \sum_{i \in R} (u^1_i - h_i u^2_i - M u^3_i) x_i - u_0\nonumber\\
+    \text{s.a.}\quad
+        &\sum_{i \in R} l_i x_{ij} \leq L                       & \forall j \in N\\
+        \nonumber\\
+        &x_i \in \{0, 1\}  & \forall i \in R
+\end{align}
+
+% ---
+
+% \begin{align}
+%     (DW)\quad
+%         &\min \sum_{i \in R} w_i y_i \nonumber\\
+%     \text{s.a.}\quad
+%         &y_i + M_j \left(1 - \sum_k x_{ij}^k \lambda_k \right) - \sum_{l = 1}^{j - 1} a_j  \geq 0 & \forall i \in R, j \in N\\
+%         &a_j - h_i \sum_k x_{ij}^k \lambda_k \geq 0                            & \forall i \in R, j \in N\\
+%         &\sum_k \lambda_k = 1\\
+%         \nonumber\\
+%         &\lambda_{k} \in \mathbb{R}_{\geq 0}\nonumber       &\forall k\\
+%         &y_i \in \mathbb{R}_{\geq 0}                        &\forall i \in R\nonumber\\
+%         &a_j \in \mathbb{R}_{\geq 0}                        &\forall j \in R\nonumber
+% \end{align}
+
+% \begin{align}
+%     (PR)\quad
+%         &\zeta = \min \sum_{i \in R} \sum_{j \in N} (h_i u^1_{ij} + M u^2_{ij}) x_{ij} - u_0\nonumber\\
+%     \text{s.a.}\quad
+%         &\sum_{j \in N} x_{ij} = 1          & \forall i \in R\\
+%         &\sum_{i \in R} l_i x_{ij} \leq L   & \forall j \in N\\
+%         \nonumber\\
+%         &x_{ij} \in \{0, 1\}                & \forall i \in R, j \in N\nonumber
+% \end{align}
+
+\begin{align}
+    (\mathcal{F})\quad
+        &\min \sum_{i \in R} \sum_{\substack{j \in R\\i \neq j}} w_i f_{ij}\nonumber\\
+    \text{s.a.}\quad
+        &\sum_{j \in R} x_{ij} \geq 1                               & \forall i \in R\\
+        &\sum_{i \in R} l_{i} x_{ij} \leq L x_{jj}                  & \forall j \in R\\
+        % &\sum_{i \in R} x_{ij} \leq x_{jj}                        & \forall j \in R\\
+        &h_i x_{ij} \leq h_j x_{jj}                                 & \forall i \in R, j \in R\\
+        &\sum_{j \in R} y_{ji} \leq x_{ii} & \forall i \in R \cup \emptyset\\
+        &\sum_{j \in R} y_{j\emptyset} \leq 1\\
+        &\sum_{j \in R \cup \{\emptyset\}} f_{ij} \leq W y_{ij} & \forall i \in R, j \in R \cup \{\emptyset\}\\
+        &\sum_{j \in R \cup \{\emptyset\}} f_{ij} = \sum_{j \in R} w_j x_{ji} + \sum_{j \in R} f_{ji} & \forall i \in R\\
+        \nonumber\\
+        &x_{ij} \in \{0, 1\}                                        & \forall i \in R, j \in R\nonumber\\
+        &y_{ij} \in \{0, 1\}                                        & \forall i \in R, j \in R \cup \{\emptyset\}\nonumber\\
+        &f_{ij} \in \mathbb{R}_{\geq 0}                             & \forall i \in R, j \in R \cup \{\emptyset\}\nonumber\\
+\end{align}
+
+\end{document}
