@@ -1,0 +1,17 @@
+build/
+output/
+.cache
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+*.vsix
+.history
+.ionide
+*.png
+*.txt
+*.lp
+*.sol

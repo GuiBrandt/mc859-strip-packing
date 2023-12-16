@@ -1,0 +1,17 @@
+recipient_length: 100
+rects:
+  - height: 73
+    length: 23
+    weight: 5
+  - height: 26
+    length: 12
+    weight: 4
+  - height: 11
+    length: 94
+    weight: 5
+  - height: 82
+    length: 73
+    weight: 4
+  - height: 42
+    length: 90
+    weight: 3
