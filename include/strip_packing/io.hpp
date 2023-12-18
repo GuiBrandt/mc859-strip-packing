@@ -10,58 +10,64 @@
 #include <numeric>
 #include <ostream>
 
-#include <yaml-cpp/yaml.h>
-
-namespace YAML {
-template <> struct convert<strip_packing::rect_t> {
-    static Node encode(const strip_packing::rect_t& rect) {
-        Node node;
-        node["height"] = rect.height;
-        node["length"] = rect.length;
-        node["weight"] = rect.weight;
-        return node;
-    }
-
-    static bool decode(const Node& node, strip_packing::rect_t& rect) {
-        rect.height = node["height"].as<strip_packing::dim_type>();
-        rect.length = node["length"].as<strip_packing::dim_type>();
-        rect.weight = node["weight"].as<strip_packing::cost_type>();
-        return true;
-    }
-};
-
-template <> struct convert<strip_packing::instance_t> {
-    static Node encode(const strip_packing::instance_t& instance) {
-        Node node;
-        node["recipient_length"] = instance.recipient_length;
-        for (const auto& rect : instance.rects) {
-            node["rects"].push_back(rect);
-        }
-        return node;
-    }
-
-    static bool decode(const Node& node, strip_packing::instance_t& instance) {
-        instance.recipient_length =
-            node["recipient_length"].as<strip_packing::dim_type>();
-
-        for (const auto& rect : node["rects"]) {
-            instance.rects.push_back(rect.as<strip_packing::rect_t>());
-        }
-
-        return true;
-    }
-};
-} // namespace YAML
+#include <mylib/myutils.h>
 
 namespace strip_packing::io {
 
 static inline instance_t read_instance(std::istream& input) {
-    return YAML::Load(input).as<instance_t>();
-}
+    using namespace mylib;
 
-static inline std::ostream& write_instance(std::ostream& output,
-                                           const instance_t& instance) {
-    return output << YAML::Node(instance);
+    instance_t instance;
+
+    int N;
+    StringTable TabHeader(1, input);
+    if (!TabHeader.first("nitems", N)) {
+        cout << "Erro: Leitura do campo \"nitems\" no arquivo" << endl;
+    }
+
+    int L;
+    if (!TabHeader.first("strip_width", L)) {
+        cout << "Erro: Leitura do campo \"strip_width\" no arquivo " << endl;
+    }
+
+    if (L < 0) {
+        cout << "Erro: Largura da faixa não pode ser negativa." << endl;
+        exit(1);
+    }
+    instance.recipient_length = L;
+    instance.rects.resize(N);
+    StringTable TabItems(N, input);
+    std::vector<int> v_item_id(N);
+    std::vector<int> v_item_width(N);
+    std::vector<int> v_item_height(N);
+    std::vector<int> v_item_weight(N);
+    TabItems.readcolumn("item", v_item_id);
+    TabItems.readcolumn("width", v_item_width);
+    TabItems.readcolumn("height", v_item_height);
+    TabItems.readcolumn("weight", v_item_weight);
+    for (int i = 0; i < N; i++) {
+        int item_id = v_item_id[i];
+        if ((item_id < 0) || (item_id >= N)) {
+            std::cerr << "Erro: Numero do item fora do intervalo 0 a " << N - 1
+                      << std::endl;
+            exit(1);
+        }
+        if (instance.rects[item_id].length != 0) {
+            std::cerr << "Erro: Item " << item_id << " duplicado." << std::endl;
+            exit(1);
+        }
+        if ((v_item_width[i] < 0) || (v_item_width[i] > L) ||
+            v_item_height[i] <= 0) {
+            std::cerr << "Erro: Dimensoes do item " << item_id
+                      << " invalidas: (" << v_item_width[i] << ","
+                      << v_item_height[i] << ")" << std::endl;
+            exit(1);
+        }
+        instance.rects[item_id].length = v_item_width[i];
+        instance.rects[item_id].height = v_item_height[i];
+        instance.rects[item_id].weight = v_item_weight[i];
+    }
+    return instance;
 }
 
 static inline std::ostream& print_instance(std::ostream& out,

@@ -6,6 +6,9 @@
 \usepackage{amsthm}
 \usepackage{mathrsfs}
 \usepackage{hyperref}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[shortlabels]{enumitem}
 % \usepackage{pgfplots}
 % \usepackage{subfig}
 
@@ -22,92 +25,265 @@
 
 \maketitle
 
-\section{Introdução}
+\section{Formulação direta}
 
-O problema escolhido foi o problema de Strip Packing em Níveis com Pesos.
-
-\section{Formulação}
-
-A formulação básica utilizada para o problema é a seguinte:
-
+A formulação básica que utilizei para o problema foi a seguinte, baseada nas discussões em sala:
 \begin{align}
     (\mathcal{SP})\quad
-        &\min \sum_{i \in R} w_i y_i\nonumber\\
+     & \min \sum_{i \in R} w_i y_i\nonumber                                                         \\
     \text{s.a.}\quad
-        &\sum_{j \in N} x_{ij} = 1                                  & \forall i \in R\\
-        &\sum_{i \in R} l_i x_{ij} \leq L                           & \forall j \in N\\
-        &y_i + M_j (1 - x_{ij}) - \sum_{k = 1}^{j - 1} a_k \geq 0   & \forall i \in R, j \in N\\
-        &a_j - h_i x_{ij} \geq 0                                    & \forall i \in R, j \in N\\
-        \nonumber\\
-        &x_{ij} \in \{0, 1\}                                        & \forall i \in R, j \in N\nonumber\\
-        &y_i \in \mathbb{R}_{\geq 0}                                & \forall i \in R\nonumber\\
-        &a_j \in \mathbb{R}_{\geq 0}                                & \forall j \in N\nonumber
+     & \sum_{j \in N} x_{ij} = 1                                & \forall i \in R                   \\
+     & \sum_{i \in R} l_i x_{ij} \leq L                         & \forall j \in N                   \\
+     & a_j - h_i x_{ij} \geq 0                                  & \forall i \in R, j \in N          \\
+     & y_i + M_j (1 - x_{ij}) - \sum_{k = 1}^{j - 1} a_k \geq 0 & \forall i \in R, j \in N          \\
+    \nonumber                                                                                       \\
+     & x_{ij} \in \{0, 1\}                                      & \forall i \in R, j \in N\nonumber \\
+     & y_i \in \mathbb{R}_{\geq 0}                              & \forall i \in R\nonumber          \\
+     & a_j \in \mathbb{R}_{\geq 0}                              & \forall j \in N\nonumber
 \end{align}
+
+As variáveis dessa formulação são:
+\begin{itemize}
+    \item $x_{ij}$, que indica se o item $i$ está no nível $j$ na solução
+    \item $y_i$, que indica a altura da base do item $i$ na solução
+    \item $a_j$, que indica a altura de um nível (isto é, a distância da base do nível à base do nível acima)
+\end{itemize}
+
+E as restrições:
+\begin{enumerate}[(1)]
+    \item Garante que cada item $i$ está em exatamente um nível na solução. Como o problema é de minimização, seria válido também exigir que cada item esteja em pelo menos um nível.
+    \item Garante que a soma das larguras dos itens em cada nível é menor ou igual ao tamanho do recipiente, $L$ (empacotamento nos níveis).
+    \item Força a variável $a_j$ (a altura do nível $j$) a ser maior ou igual à altura de cada item no nível $j$. Isso corresponde à restrição de que a altura de um nível é igual à maior altura de um item nele, uma vez que qualquer altura estritamente maior que algum item no nível só pode aumentar o custo da solução.
+    \item Quando $x_{ij} = 1$, i.e., o item $i$ está no nível $j$ na solução, essa restrição corresponde a $y_i \geq \sum_{k = 1}^{j - 1} a_k$, ou seja, a altura da base do item $i$ é igual à soma das alturas dos níveis abaixo de $j$ (que corresponde a dizer que a base do item é a mesma base do nível em que ele está). Quando $x_{ij} = 0$, a restrição é trivialmente satisfeita, desde que $M_j$ seja grande o suficiente (em particular, maior ou igual a $\sum_{k = 1}^{j - 1} a_k$).
+\end{enumerate}
+
+\subsection{Variações}
+
+\subsubsection{Indicadores de uso dos níveis}
+
+A formulação acima tem um problema de simetria, no sentido que uma mesma solução pode ser representada de diferentes formas, deixando níveis vazios.
+
+Por exemplo, se $L_i$ é o conjunto dos itens no nível $i$, as soluções
+$$L_1 = \{1, 2\} \qquad L_2 = \{3, 4\}$$
+e
+$$L_2 = \{1, 2\} \qquad L_4 = \{3, 4\}$$
+são equivalentes (na segunda, temos níveis 1 e 3 vazios), mas dão atribuições de valores binários diferentes às variáveis na formulação.
+
+Podemos quebrar essa simetria adicionando uma variável para indicar o uso de um determinado nível, e forçando os níveis a obedecer uma ordem.
+
+Adicionamos então uma variável $u_j \in \{0, 1\} \quad \forall j \in N$, e as restrições:
+\begin{itemize}
+    \item $u_j \geq x_{ij}$, que garante que um item só pode estar em um nível se o nível for usado
+    \item $u_{j-1} \geq u_j$, que garante que um nível só pode ser usado caso o nível imediatamente anterior a ele seja usado. Evidentemente, excluímos o primeiro nível (nível 1) dessa condição.
+\end{itemize}
+
+Além disso, temos a seguinte proposição:
+
+\begin{prop}
+    A seguinte desigualdade é válida:
+    $$\sum_{i \in R} x_{ij} \geq u_j \quad \forall j \in N$$
+    \proof
+    Evidentemente, se $u_j = 0$, então não pode existir item no nível $j$ (pela primeira restrição adicionada), portanto $\sum_{i \in R} x_{ij} = 0$, logo a desigualdade é valida.
+
+    Além disso, se $\sum_{i \in R} x_{ij} = 0$ (i.e., nenhum item está no nível $j$), não faz sentido usar o nível na solução (dada uma solução ótima que usasse o nível $j$ sem nenhum item, podemos facilmente obter uma solução equivalente que não usa o nível $j$). Logo, se $u_j = 1$, então deve existir pelo menos um item no nível, e portanto $\sum_{i \in R} x_{ij} \geq 1 = u_j$. \qed
+\end{prop}
+
+A formulação a seguir incorpora essas melhorias na formulação anterior:
+\begin{align*}
+    (\mathcal{SP}^\prime)\quad
+     & \min \sum_{i \in R} w_i y_i\nonumber                                                         \\
+    \text{s.a.}\quad
+     & \sum_{j \in N} x_{ij} = 1                                & \forall i \in R                   \\
+     & \sum_{i \in R} l_i x_{ij} \leq L                         & \forall j \in N                   \\
+     & a_j - h_i x_{ij} \geq 0                                  & \forall i \in R, j \in N          \\
+     & y_i + M_j (1 - x_{ij}) - \sum_{k = 1}^{j - 1} a_k \geq 0 & \forall i \in R, j \in N          \\
+     & u_j \geq x_{ij}                                          & \forall i \in R, j \in N          \\
+     & u_{j-1} \geq u_j                                         & \forall j \in N \setminus \{1\}   \\
+     & \sum_{i \in R} x_{ij} \geq u_j                           & \forall j \in N                   \\
+    \nonumber                                                                                       \\
+     & x_{ij} \in \{0, 1\}                                      & \forall i \in R, j \in N\nonumber \\
+     & y_i \in \mathbb{R}_{\geq 0}                              & \forall i \in R\nonumber          \\
+     & a_j \in \mathbb{R}_{\geq 0}                              & \forall j \in N\nonumber          \\
+     & u_j \in \{0, 1\}                                         & \forall j \in N\nonumber
+\end{align*}
+
+\subsection{Formulação com geração de colunas}
+
+Outra possível modificação da formulação original é uma formulação por geração de colunas.
+
+Em particular, podemos reformular o problema original considerando o subproblema de empacotamento de itens em um nível, de forma que os problemas de precificação (considerando $|N|$ níveis, temos $|N|$ problemas de precificação independentes, um para cada nível) se torna um problema da mochila, que embora ainda NP-difícil pode ser resolvido em tempo pseudopolinomial e de forma bastante rápida na prática, especialmente para instâncias relativamente pequenas, como é o caso. Essa abordagem é similar à aplicada ao problema de {\it Cutting Stock} por Gilmore e Gomory \cite{gilmore-gomory}.
+
+O problema mestre da geração de colunas nesse caso é:
 
 \begin{align}
     (DW)\quad
-        &\min \sum_{i \in R} w_i y_i \nonumber\\
+     & \min \sum_{i \in R} w_i y_i \nonumber                                                                              \\
     \text{s.a.}\quad
-        &\sum_{j \in N} \sum_k x_i^k \lambda_{jk} = 1       & \forall i \in R\\
-        &a_j - h_i \sum_k x_i^k \lambda_{jk} \geq 0                            & \forall i \in R, j \in N\\
-        &y_i + M_j \left(1 - \sum_k x_i^k \lambda_{jk} \right) - \sum_{l = 1}^{j - 1} a_j \geq 0 & \forall i \in R, j \in N\\
-        &\sum_k \lambda_{jk} = 1                            & \forall j \in N\\
-        \nonumber\\
-        &\lambda_{jk} \in \mathbb{R}_{\geq 0}               & \forall j \in N\nonumber\\
-        &y_i \in \mathbb{R}_{\geq 0}                        & \forall i \in R\nonumber\\
-        &a_j \in \mathbb{R}_{\geq 0}                        & \forall j \in R\nonumber
+     & \sum_{j \in N} \sum_k x_i^k \lambda_{jk} = 1                                            & \forall i \in R          \\
+     & a_j - h_i \sum_k x_i^k \lambda_{jk} \geq 0                                              & \forall i \in R, j \in N \\
+     & y_i + M_j \left(1 - \sum_k x_i^k \lambda_{jk} \right) - \sum_{l = 1}^{j - 1} a_j \geq 0 & \forall i \in R, j \in N \\
+     & \sum_k \lambda_{jk} = 1                                                                 & \forall j \in N          \\
+    \nonumber                                                                                                             \\
+     & \lambda_{jk} \in \mathbb{R}_{\geq 0}                                                    & \forall j \in N\nonumber \\
+     & y_i \in \mathbb{R}_{\geq 0}                                                             & \forall i \in R\nonumber \\
+     & a_j \in \mathbb{R}_{\geq 0}                                                             & \forall j \in R\nonumber
 \end{align}
 
+E o subproblema $j$ de geração de colunas, para $j \in N$, é exatamente um problema da mochila, usando como pesos dos itens as variáveis duais das restrições do problema mestre:
 \begin{align}
     (PR)\quad
-        &\zeta^j = \min - \sum_{i \in R} (u^1_i - h_i u^2_i - M u^3_i) x_i - u_0\nonumber\\
+     & \zeta^j = \max \sum_{i \in R} (u^1_i - h_i u^2_i - M u^3_i) x_i + u_0\nonumber                   \\
     \text{s.a.}\quad
-        &\sum_{i \in R} l_i x_{ij} \leq L                       & \forall j \in N\\
-        \nonumber\\
-        &x_i \in \{0, 1\}  & \forall i \in R
+     & \sum_{i \in R} l_i x_{ij} \leq L                                               & \forall j \in N \\
+    \nonumber                                                                                           \\
+     & x_i \in \{0, 1\}                                                               & \forall i \in R
 \end{align}
 
-% ---
+Implementei a geração de colunas, mas não consegui implementar o Branch-and-Price de forma eficaz, e portanto não consegui validar completamente a viabilidade dessa formulação.
 
-% \begin{align}
-%     (DW)\quad
-%         &\min \sum_{i \in R} w_i y_i \nonumber\\
-%     \text{s.a.}\quad
-%         &y_i + M_j \left(1 - \sum_k x_{ij}^k \lambda_k \right) - \sum_{l = 1}^{j - 1} a_j  \geq 0 & \forall i \in R, j \in N\\
-%         &a_j - h_i \sum_k x_{ij}^k \lambda_k \geq 0                            & \forall i \in R, j \in N\\
-%         &\sum_k \lambda_k = 1\\
-%         \nonumber\\
-%         &\lambda_{k} \in \mathbb{R}_{\geq 0}\nonumber       &\forall k\\
-%         &y_i \in \mathbb{R}_{\geq 0}                        &\forall i \in R\nonumber\\
-%         &a_j \in \mathbb{R}_{\geq 0}                        &\forall j \in R\nonumber
-% \end{align}
+Entretanto, consegui ao menos implementar a geração de colunas para encontrar uma solução ótima para a relaxação linear do problema mestre.
 
-% \begin{align}
-%     (PR)\quad
-%         &\zeta = \min \sum_{i \in R} \sum_{j \in N} (h_i u^1_{ij} + M u^2_{ij}) x_{ij} - u_0\nonumber\\
-%     \text{s.a.}\quad
-%         &\sum_{j \in N} x_{ij} = 1          & \forall i \in R\\
-%         &\sum_{i \in R} l_i x_{ij} \leq L   & \forall j \in N\\
-%         \nonumber\\
-%         &x_{ij} \in \{0, 1\}                & \forall i \in R, j \in N\nonumber
-% \end{align}
+Outra formulação possível por geração de colunas envolveria gerar uma atribuição completa de itens a níveis (ou seja, movendo a primeira restrição da formulação original também para subproblema de precificação); isso diminui a quantidade de subproblemas de $|N|$ para um, mas torna o problema de precificação significativamente mais complexo, e não pareceu promissor.
 
+Um próximo passo possível seria incorporar as melhorias da seção anterior ao problema mestre da geração de colunas; não segui essa abordagem para focar em outros aspectos da implementação.
+
+\section{Formulação com fluxo}
+
+Uma terceira formulação envolve imaginar o problema como um problema em grafos, considerando a função de custo e restrições de altura como fluxo precificado.
+
+Em particular, podemos considerar cada item como um nó, e definir que um item $i$ está no nível do item $j$ se existe um arco do item $i$ para o item $j$ (arcos item $\rightarrow$ nível), aproveitando que, no máximo, existem tantos níveis quanto itens. Para definir a ordem relativa dos níveis, basta determinar um segundo conjunto de arcos entre os itens que definem níveis (arcos de nível). Podemos definir que um item define um nível se ele está no próprio nível, i.e., se existe um arco item $\rightarrow$ nível que é um laço no nó correspondente.
+
+Para traduzir a função de custo, podemos dizer que cada nó de item produz fluxo igual ao peso do item, e cada arco de um nível $i$ para o nível anterior $j$ tem custo igual à altura de $j$. Dessa forma, o custo do fluxo seja a altura do nível imediatamente abaixo vezes o peso dos itens acumulado de cada nível acima. Adicionamos também um único consumidor, um nó extra que não corresponde a nenhum item, e que representa a ``base'' da solução; o arco de nível que entra neste nó tem custo 0, correspondente a itens na base da solução terem custo multiplicado por 0.
+
+É possível notar que a soma dos custos dos fluxos nos arcos de nível corresponde exatamente à função de custo do problema original.
+
+Por conta da estrutura do problema (cada item está em exatamente um nível), o problema se torna análogo a encontrar uma árvore geradora (ou, no caso, uma ramificação) que minimiza o custo total do fluxo. As figuras abaixo ilustram a equivalência entre as duas representações de soluções do problema, para uma instância com 15 itens.
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=1.25cm]{exact.png}
+        \caption{Solução de strip packing em níveis.}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=4.4cm]{flow.png}
+        \caption{Solução de ramificação correspondente.}
+    \end{subfigure}
+\end{figure}
+
+A formulação por fluxo é a seguinte:
 \begin{align}
     (\mathcal{F})\quad
-        &\min \sum_{i \in R} \sum_{\substack{j \in R\\i \neq j}} w_i f_{ij}\nonumber\\
+     & \min \sum_{i \in R} \sum_{\substack{j \in R                                                                                                         \\i \neq j}} w_i f_{ij}\nonumber\\
     \text{s.a.}\quad
-        &\sum_{j \in R} x_{ij} \geq 1                               & \forall i \in R\\
-        &\sum_{i \in R} l_{i} x_{ij} \leq L x_{jj}                  & \forall j \in R\\
-        % &\sum_{i \in R} x_{ij} \leq x_{jj}                        & \forall j \in R\\
-        &h_i x_{ij} \leq h_j x_{jj}                                 & \forall i \in R, j \in R\\
-        &\sum_{j \in R} y_{ji} \leq x_{ii} & \forall i \in R \cup \emptyset\\
-        &\sum_{j \in R} y_{j\emptyset} \leq 1\\
-        &\sum_{j \in R \cup \{\emptyset\}} f_{ij} \leq W y_{ij} & \forall i \in R, j \in R \cup \{\emptyset\}\\
-        &\sum_{j \in R \cup \{\emptyset\}} f_{ij} = \sum_{j \in R} w_j x_{ji} + \sum_{j \in R} f_{ji} & \forall i \in R\\
-        \nonumber\\
-        &x_{ij} \in \{0, 1\}                                        & \forall i \in R, j \in R\nonumber\\
-        &y_{ij} \in \{0, 1\}                                        & \forall i \in R, j \in R \cup \{\emptyset\}\nonumber\\
-        &f_{ij} \in \mathbb{R}_{\geq 0}                             & \forall i \in R, j \in R \cup \{\emptyset\}\nonumber\\
+     & \sum_{j \in R} x_{ij} = 1                                                                    & \forall i \in R                                      \\
+     & \sum_{i \in R} l_{i} x_{ij} \leq L x_{jj}                                                    & \forall j \in R                                      \\
+     & h_i x_{ij} \leq h_j x_{jj}                                                                   & \forall i \in R, j \in R                             \\
+     & \sum_{j \in R} y_{ji} \leq x_{ii}                                                            & \forall i \in R                                      \\
+     & \sum_{j \in R} y_{j\emptyset} \leq 1                                                                                                                \\
+     & \sum_{j \in R \cup \{\emptyset\}} f_{ij} \leq W y_{ij}                                       & \forall i \in R, j \in R \cup \{\emptyset\}          \\
+     & \sum_{j \in R \cup \{\emptyset\}} f_{ij} = \sum_{j \in R} w_j x_{ji} + \sum_{j \in R} f_{ji} & \forall i \in R                                      \\
+    \nonumber                                                                                                                                              \\
+     & x_{ij} \in \{0, 1\}                                                                          & \forall i \in R, j \in R\nonumber                    \\
+     & y_{ij} \in \{0, 1\}                                                                          & \forall i \in R, j \in R \cup \{\emptyset\}\nonumber \\
+     & f_{ij} \in \mathbb{R}_{\geq 0}                                                               & \forall i \in R, j \in R \cup \{\emptyset\}\nonumber \\
 \end{align}
+
+Onde temos as variáveis:
+\begin{itemize}
+    \item $x_{ij}$, que indica se o item $i$ está no nível do item $j$ na solução (arcos item $\rightarrow$ nível)
+    \item $y_{ij}$, que indica se o nível $j$ está logo abaixo do nível $i$ (arcos de nível)
+    \item $f_{ij}$, que dá o fluxo em um arco de nível $(i, j)$.
+\end{itemize}
+
+E as restrições:
+\begin{enumerate}[(1)]
+    \setcounter{enumi}{10}
+    \item Que determina que cada item está em exatamente um nível (i.e. existe exatamente um arco item $\rightarrow$ nível para cada item).
+    \item Que garante o empacotamento dos itens nos níveis (ou seja, a soma das larguras dos itens em um nível não excede o limite $L$). Aqui podemos multiplicar $L$ por $x_{jj}$ (que indica se $j$ define um nível na solução), uma vez que, se um item $j$ não define nível, não pode haver nenhum item no nível $j$ (e portanto a largura total deve ser zero). Isso fortalece a relaxação da formulação, uma vez que $x_{jj} \leq 1$.
+    \item Que, para evitar algumas simetrias, determina que a altura do item que define o nível deve ser a maior altura no nível. A mesma técnica de multiplicação do lado direito por $x_{jj}$ da restrição anterior é válida aqui.
+    \item Que determina que no máximo um arco de nível entra em cada nível definido por um item, e nenhuma entra em um nível que não é usado (indicado pelo laço no nó do item correspondente).
+    \item Que determina que no máximo um arco de nível entra no nó especial que serve como consumidor do fluxo.
+    \item Que determina a capacidade de um arco de nível. Um arco de nível $(i, j)$ tem capacidade $W$ se for usado (i.e. o nível $j$ está imediatamente abaixo do nível $i$) e 0 caso contrário. O valor de $W$ só precisa ser grande o suficiente para suportar a soma dos pesos de cada item na solução.
+\end{enumerate}
+
+\section{Resultados computacionais}
+
+Executei os programas em uma máquina com o sistema operacional Manjaro Linux, com 32 GB de RAM e um processador Intel i9-12900K (especificado na tabela \ref{tab:cpu-spec}), utilizando a build v10.0.3rc0 (linux64) do Gurobi, com a licença acadêmica.
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Modelo} & i9-12900K \\\hline
+        \textbf{Fabricante} & Intel\textsuperscript{\tiny\textregistered} \\\hline
+        \textbf{Microarquitetura} & Alder Lake\\\hline
+        \textbf{Núcleos} & 8 performance / 8 eficiência\\\hline
+        \textbf{Threads} & 24\\\hline
+        \textbf{Frequência} & 3.20GHz (performance) / 2.40 GHz (eficiência)\\\hline
+        \textbf{Cache} & 30 MB Intel\textsuperscript{\tiny\textregistered} Smart Cache\\\hline
+        \textbf{Cache L2} & 14 MB\\\hline
+    \end{tabular}
+    \caption{Especificação da CPU}
+    \label{tab:cpu-spec}
+\end{table}
+
+Cada instância foi aplicada ao programa com a formulação $(\mathcal{SP}^\prime)$ e com a formulação $(\mathcal{F})$ separadamente.
+
+Para cada instância, uma solução heurística é gerada com iterações randomizadas das heurísticas best-fit e first-fit e melhorada com o BRKGA, com um tempo fixo de 30s. Defini o tempo limite para o Gurobi em 600 segundos.
+
+As tabelas \ref{tab:computational-results} e \ref{tab:computational-results-flow} apresentam os resultados para a formulação $(\mathcal{SP}^\prime)$ e $(\mathcal{F})$, respectivamente. Onde o programa encontra a solução ótima, o melhor limitante é omitido.
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{c|c|c|c|c}
+        Instância   & Valor      & Heurística & Melhor limitante & Tempo (Gurobi) \\
+        \hline
+        {\tt 1\_10} & {\bf 1504} & {\bf 1504} & --               & 0,19s          \\
+        {\tt 2\_10} & 4211       & 4313       & --               & 0,60s          \\
+        {\tt 3\_10} & {\bf 1553} & {\bf 1553} & --               & 1,10s          \\
+        \hline
+        {\tt 1\_15} & {\bf 5036} & {\bf 5036} & --               & 185,10s        \\
+        {\tt 2\_15} & {\bf 4928} & {\bf 4928} & --               & 45,79s         \\
+        {\tt 3\_15} & {\bf 4634} & {\bf 4634} & --               & 9,06s          \\
+        \hline
+        {\tt 1\_20} & --         & 8461       & 6225,831         & {\bf 600,01s}  \\
+        {\tt 2\_20} & --         & 6953       & 3944,267         & {\bf 600,00s}  \\
+        {\tt 3\_20} & --         & 11036      & 6515,507         & {\bf 600,01s}
+    \end{tabular}
+    \caption{Resultados computacionais para a formulação $(\mathcal{SP}^\prime)$}
+    \label{tab:computational-results}
+\end{table}
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{c|c|c|c|c}
+        Instância   & Valor      & Heurística & Melhor limitante & Tempo (Gurobi) \\
+        \hline
+        {\tt 1\_10} & {\bf 1504} & {\bf 1504} & --               & 0,35s          \\
+        {\tt 2\_10} & {\bf 4211} & {\bf 4211}       & --               & 2,23s          \\
+        {\tt 3\_10} & {\bf 1553} & {\bf 1553} & --               & 0,90s          \\
+        \hline
+        {\tt 1\_15} & {\bf 5036} & {\bf 5036} & --               & 562,22s        \\
+        {\tt 2\_15} & --         & {\bf 4928} & --               & 600,02s        \\
+        {\tt 3\_15} & {\bf 4634} & {\bf 4634} & --               & 81,48s         \\
+        \hline
+        {\tt 1\_20} & --         & 8461       & 3915,152         & {\bf 600,01s}  \\
+        {\tt 2\_20} & --         & 6953       & 2640,020         & {\bf 600,01s}  \\
+        {\tt 3\_20} & --         & 11036      & 3798,881         & {\bf 600,02s}
+    \end{tabular}
+    \caption{Resultados computacionais para a formulação $(\mathcal{F})$}
+    \label{tab:computational-results-flow}
+\end{table}
+
+De forma geral, ambas as formulações conseguem lidar com instâncias de tamanho 10 razoavelmente bem. Para instâncias de tamanho 15, o tempo de execução varia consideravelmente, mas a formulação por fluxo apresenta tempos consistentemente piores que a formulação $(\mathcal{SP}^\prime)$.
+
+Nenhuma das duas formulações foi capaz de resolver de forma satisfatória instâncias de tamanho 20, ambas atingindo o tempo limite. Mesmo nesse caso, a primeira formulação conseguiu obter limitantes inferiores melhores que a formulação por fluxo.
+
+É possível notar que, em praticamente todas as instâncias onde o ótimo foi provado, a solução heurística condiz com o valor ótimo obtido. Isso indica que a heurística é boa, e o gargalo dos algoritmos está provavelmente relacionado à dificuldade de obter um limitante inferior adequado.
+
+\bibliographystyle{abntex2-alf}
+\bibliography{refs}
 
 \end{document}

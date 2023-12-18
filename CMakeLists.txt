@@ -79,16 +79,6 @@ find_package(GUROBI REQUIRED)
 #   DOI 10.1016/j.ejor.2019.11.037
 find_package(BRKGA REQUIRED)
 
-# yaml-cpp - Biblioteca para leitura de arquivos YAML.
-#
-# Nenhuma configuração adicional é necessária.
-FetchContent_Declare(YAML_CPP
-  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp
-  GIT_TAG        0.8.0
-  GIT_SHALLOW    true
-)
-FetchContent_MakeAvailable(YAML_CPP)
-
 # Blend2d - Biblioteca para renderização de gráficos vetoriais.
 #
 # Nenhuma configuração adicional é necessária.
@@ -125,15 +115,30 @@ find_package(OpenMP)
 #==============================================================================
 # Configuração de compilação
 #==============================================================================
+add_library(mylib src/mylib/myutils.cpp)
+
 #------------------------------------------------------------------------------
 # Exato
 #------------------------------------------------------------------------------
 add_executable(mc859-strip-packing src/exact.cpp)
 
 target_link_libraries(mc859-strip-packing PRIVATE
-  yaml-cpp::yaml-cpp
   argparse::argparse
   blend2d::blend2d
+  mylib
+  ${GUROBI_CXX_LIBRARY}
+  ${LEMON_LIBRARY}
+  ${GUROBI_C_LIBRARY})
+
+#------------------------------------------------------------------------------
+# Exato
+#------------------------------------------------------------------------------
+add_executable(mc859-strip-packing-flow src/flow.cpp)
+
+target_link_libraries(mc859-strip-packing-flow PRIVATE
+  argparse::argparse
+  blend2d::blend2d
+  mylib
   ${GUROBI_CXX_LIBRARY}
   ${LEMON_LIBRARY}
   ${GUROBI_C_LIBRARY})
@@ -147,9 +152,9 @@ target_compile_options(mc859-strip-packing-heuristics PRIVATE
   -Wall -Wextra -Wpedantic)
 
 target_link_libraries(mc859-strip-packing-heuristics PRIVATE
-  yaml-cpp::yaml-cpp
   argparse::argparse
-  blend2d::blend2d)
+  blend2d::blend2d
+  mylib)
 
 # Habilita threads e OpenMP se possível (usado no BRKGA).
 if(Threads_FOUND)
@@ -158,15 +163,3 @@ endif()
 if(OpenMP_CXX_FOUND)
   target_link_libraries(mc859-strip-packing-heuristics PRIVATE OpenMP::OpenMP_CXX)
 endif()
-
-#------------------------------------------------------------------------------
-# Gerador de instâncias
-#------------------------------------------------------------------------------
-add_executable(mc859-strip-packing-gen-instances src/gen_instances.cpp)
-
-target_compile_options(mc859-strip-packing-gen-instances PRIVATE
-  -Wall -Wextra -Wpedantic)
-
-target_link_libraries(mc859-strip-packing-gen-instances PRIVATE
-  yaml-cpp::yaml-cpp
-  argparse::argparse)

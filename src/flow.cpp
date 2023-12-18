@@ -107,16 +107,16 @@ int main(int argc, char** argv) {
 
     std::cout << "[Best heuristic solution]" << std::endl;
     io::print_solution(std::cout, instance, heuristic_solution);
-
+    
     GRBEnv env;
     env.set(GRB_DoubleParam_Cutoff, instance.cost(heuristic_solution));
     env.set(GRB_DoubleParam_TimeLimit, 600);
-
-    auto solution = exact::solve(env, instance);
+    
+    auto solution = exact::flow::solve(env, instance);
     std::cout << "[Optimal solution]" << std::endl;
     io::print_solution(std::cout, instance, solution);
     render::render_solution(instance, solution, conf.output + "/exact.png");
-
+    
     std::ofstream out(conf.output + "/exact.txt");
     io::print_solution(out, instance, solution);
     out.close();

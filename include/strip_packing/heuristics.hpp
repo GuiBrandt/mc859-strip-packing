@@ -480,7 +480,7 @@ class runner {
     }
 
     /*! Executa as heurísticas. */
-    void run() {
+    solution_t run() {
         std::ofstream out;
         std::minstd_rand rng(m_config.random_seed);
 
@@ -532,6 +532,14 @@ class runner {
             out.close();
             render::render_solution(m_instance, brkga_solution,
                                     m_config.output + "/brkga.png");
+            return brkga_solution;
+        } else {
+            if (m_instance.cost(best_fit_solution) <
+                m_instance.cost(first_fit_solution)) {
+                return best_fit_solution;
+            } else {
+                return first_fit_solution;
+            }
         }
     }
 };
